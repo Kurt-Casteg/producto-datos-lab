@@ -1,400 +1,445 @@
-# Laboratorio - Implementando un modelo de Machine Learning
+# 🚕 Taxi Tip Prediction - Laboratorio de Machine Learning
 
-**Este Laboratorio está inspirado en la unidad 1 del curso [Introduction to Machine Learning in Production (DeepLearning.AI)](https://www.coursera.org/learn/introduction-to-machine-learning-in-production/home/welcome). También se apoya en código para generar el modelo disponible en [este repositorio de Shreya Shankar](https://github.com/shreyashankar/debugging-ml-talk) e implementar un flujo de trabajo usando Github Actions de la [Unidad 4 del curso mencionado anteriormente](https://github.com/jesussantana/DeepLearning.AI-Introduction-to-Machine-Learning-in-Production).**
+Este proyecto implementa un modelo de Machine Learning para predecir si un pasajero de taxi en NYC dejará una propina alta (≥20% del costo del viaje). El proyecto incluye entrenamiento de modelos, API REST, monitoreo y CI/CD con GitHub Actions.
 
-Para comenzar deben haber bajado todos los archivos a una carpeta y en el terminal de Anaconda llegar a ese directorio.
+## 📋 Tabla de Contenidos
+
+- [Descripción del Proyecto](#descripción-del-proyecto)
+- [Estructura del Proyecto](#estructura-del-proyecto)
+- [Requisitos Previos](#requisitos-previos)
+- [Instalación](#instalación)
+- [Ejecución del Proyecto](#ejecución-del-proyecto)
+- [Uso de la API](#uso-de-la-api)
+- [Entrenamiento de Modelos](#entrenamiento-de-modelos)
+- [Testing y CI/CD](#testing-y-cicd)
+- [Notebooks de Desarrollo](#notebooks-de-desarrollo)
+
+## 🎯 Descripción del Proyecto
+
+Este laboratorio está inspirado en la unidad 1 del curso [Introduction to Machine Learning in Production (DeepLearning.AI)](https://www.coursera.org/learn/introduction-to-machine-learning-in-production/home/welcome) y implementa:
+
+- **Modelo de Clasificación**: Random Forest para predecir propinas altas
+- **API REST**: FastAPI para servir predicciones
+- **Monitoreo**: Sistema de monitoreo de rendimiento del modelo
+- **CI/CD**: Pipeline automatizado con GitHub Actions
+- **Testing**: Tests unitarios con pytest
+
+## 📁 Estructura del Proyecto
 
 ```
-.
-└── producto-datos-lab (este directorio)
-    ├── model (acá irán nuestros modelos)
-    ├── 00_nyc-taxi-model.ipynb
-    ├── 01_server.ipynb
-    ├── 02_client.ipynb
-    └── requirements.txt (dependencias de Python)
+producto-datos-lab/
+├── 📁 app/                    # Aplicación principal
+│   ├── main.py               # Servidor FastAPI simple
+│   ├── test_rfc.py          # Tests unitarios
+│   ├── 📁 data/             # Datos de prueba
+│   └── 📁 model/            # Modelos entrenados
+├── 📁 src/                   # Código modular
+│   ├── api.py               # API FastAPI modular
+│   ├── train.py             # Entrenamiento de modelos
+│   ├── predict.py           # Predicciones
+│   ├── features.py          # Ingeniería de características
+│   ├── monitoring.py        # Monitoreo
+│   ├── client.py            # Cliente para API
+│   └── config.py            # Configuración
+├── 📁 notebooks/            # Jupyter notebooks
+├── 📁 model/                # Modelos guardados
+├── 📁 docs/                 # Documentación
+├── requirements.txt          # Dependencias Python
+└── README.md               # Este archivo
 ```
- 
- 
-## Pasos previos usando Conda
- 
-### Prerequisito: Tener [conda](https://docs.conda.io/en/latest/) instalado en tu computador.
- 
-Vamos a usar Conda para construir un entorno virtual nuevo.
- 
-### 1. Creando el entorno virtual (Virtual Environment)
- 
-Asumiremos que tenemos instalado conda. El primer paso es crear un nuevo enviroment para desarrollar. Para crear uno usando Python 3.8 debemos ejecutar el siguiente comando:
- 
+
+## 🔧 Requisitos Previos
+
+### Opción 1: Conda (Recomendado)
+- [Conda](https://docs.conda.io/en/latest/) instalado en tu sistema
+
+### Opción 2: uv (Alternativa moderna)
+- [uv](https://docs.astral.sh/uv/) instalado en tu sistema
+
+### Opción 3: Python virtual environment
+- Python 3.8+ instalado
+- pip para gestión de paquetes
+
+## 🚀 Instalación
+
+### Método 1: Usando Conda (Recomendado)
+
+1. **Crear entorno virtual:**
 ```bash
 conda create --name producto-datos-lab python=3.9
-```
- 
-Luego debemos activarlo usando el comando:
- 
-```bash
 conda activate producto-datos-lab
 ```
- 
-Todo el trabajo que realicemos con este código será en este entorno. Así que al trabajarcon estos archivos siempre tiene que estar activo el `producto-datos-lab`.
- 
-### 2. Instalando las dependencias usando PIP 
- 
-Antes de seguir, verifica que en el terminal de Anaconda estés dentro del directorio `producto-datos-lab`, el cual incluye el archivo `requirements.txt`. Este archivo enlista todas las dependencias necesarias y podemos usarlo para instalarlas todas:
- 
+
+2. **Instalar dependencias:**
 ```bash
 pip install -r requirements.txt
 ```
- 
-Este comando puede demorar un rato dependiendo de la velocidad del computador y la de la conexión a Internet. Una vez que termine ya está listo todo para comenzar una sesión de Jupyter Lab o Notebook.
 
-Luego debemos enlazar el kernel de jupyter lab a nuestro nuevo enviroment:
-
+3. **Configurar Jupyter:**
 ```bash
 python -m ipykernel install --user --name producto-datos-lab
 ```
 
- 
-### 3. Iniciando Jupyter Lab
- 
-Jupyter lab debería haber quedado instalado en el paso anterior, así que basta con escribir:
+### Método 2: Usando uv (Más rápido)
 
-```bash
-jupyter lab
-```
-
-### 4. Generando modelo de ML
-
-El notebook que genera el modelo se puede ejecutar en su totalidad desde [Google Colab](https://colab.research.google.com/drive/1CajYNrge3sAdV7Tc6YDvbB6fVqIP2qsJ?usp=sharing).
-
-
-## Pasos alternativos usando uv
-
-### Prerequisito: Tener [uv](https://docs.astral.sh/uv/) instalado en tu computador.
-
-`uv` es una herramienta moderna y rápida para gestionar entornos virtuales y dependencias de Python. Como alternativa a conda, puedes usar `uv` que ofrece un rendimiento significativamente mejor.
-
-### 1. Instalando uv
-
-Si no tienes `uv` instalado, puedes instalarlo con:
-
-**En Windows (PowerShell):**
-```bash
-powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
-```
-
-**En Windows (usando pip):**
-```bash
-pip install uv
-```
-
-**En macOS/Linux:**
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-
-### 2. Creando el entorno virtual con uv
-
-Navega al directorio `producto-datos-lab` y crea un entorno virtual:
-
+1. **Crear entorno virtual:**
 ```bash
 uv venv
 ```
 
-### 3. Activando el entorno virtual
-
-**En Windows:**
+2. **Activar entorno:**
 ```bash
+# Windows
 producto-datos-lab\Scripts\activate
-```
 
-**En macOS/Linux:**
-```bash
+# macOS/Linux
 source producto-datos-lab/bin/activate
 ```
 
-### 4. Instalando las dependencias con uv
-
-Con el entorno activado, instala todas las dependencias directamente desde `requirements.txt`:
-
+3. **Instalar dependencias:**
 ```bash
 uv pip install -r requirements.txt
 ```
 
-Este comando es significativamente más rápido que pip tradicional y maneja mejor la resolución de dependencias.
-
-### 5. Enlazando el kernel de Jupyter
-
-Instala el kernel para Jupyter:
-
+4. **Configurar Jupyter:**
 ```bash
 python -m ipykernel install --user --name producto-datos-lab
 ```
 
-### 6. Iniciando Jupyter Lab
+### Método 3: Python virtual environment
+
+1. **Crear entorno virtual:**
+```bash
+python -m venv producto-datos-lab
+```
+
+2. **Activar entorno:**
+```bash
+# Windows
+producto-datos-lab\Scripts\activate
+
+# macOS/Linux
+source producto-datos-lab/bin/activate
+```
+
+3. **Instalar dependencias:**
+```bash
+pip install -r requirements.txt
+```
+
+## 🏃‍♂️ Ejecución del Proyecto
+
+### 1. Entrenamiento del Modelo
+
+#### Opción A: Usando el código modular (src/)
+
+```bash
+# Desde la raíz del proyecto
+python -c "
+from src.train import pipeline_entrenamiento_completo
+from src.dataset import cargar_datos_nyc
+import pandas as pd
+
+# Cargar datos
+df = cargar_datos_nyc('2020-01')  # Enero 2020
+modelo, metrics = pipeline_entrenamiento_completo(df)
+print(f'Modelo entrenado con F1-Score: {metrics[\"f1_score\"]:.4f}')
+"
+```
+
+#### Opción B: Usando notebooks
 
 ```bash
 jupyter lab
 ```
 
+Luego ejecuta el notebook `00_nyc-taxi-model.ipynb` para entrenar el modelo.
 
-## Agregando pipelines de CI/CD usando GitHub Actions
+### 2. Ejecutar la API
 
-En este laboratorio también usaremos [GitHub Actions](https://github.com/features/actions) para automatizar flujos de trabajo de Machine Learning. Además haremos un test unitario simple usando [pytest](https://docs.pytest.org/en/6.2.x/) para evaluar cambios en el código antes de publicar a producción.
-
-Para esta parte debemos hacer un [fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo) de este repositorio para que podamos correr las GH actions en nuestra propia copia del repositorio.
-
-
-
-### ¿Qué es GH Actions?
-
-Es una herramienta sensacional que permite definir flujos de trabajo automáticos para eventos específicos dentro de un repositorio de GitHub. 
-
-Vamos a preparar una acción que corra test unitarios definidos en el código cada vez que mandemos cambios al repositorio remoto.
-
-
-### Fork el repositorio público
-
-Hacer fork a un repositorio es simplemente crear una versión propia de este. Se usa bastante en el desarrollo de software Open Source para organizar una forma de trabajar colaborativamente. En vez de usar el mismo repositorio público (en el que probablemente no se tenga acceso de escritura) se puede trabajar en el fork y mandar Pull Requests desde ahí. Para hacer un fork de este repo sólo se debe clickear en el botón `Fork` en la esquina superior derecha:
-
-![fork-repo](assets/fork-repo.PNG)
-
-Una vez que el proceso de fork haya terminado, deberíamos tener una copia del repositorio pero registrada bajo nuestro propio nombre de usuario:
-
-![your-fork](assets/your-fork.PNG)
-
-Ahora necesitamos clonarlo a nuestra máquina local. Se puede hacer mediante [GitHub Desktop](https://desktop.github.com/) o usando este comando (ojo que hay que reemplazar el username por el propio):
+#### Opción A: API Simple (app/main.py)
 
 ```bash
-git clone https://github.com/your-username/producto-datos-lab.git
+cd app
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Ahora hay que habilitar las Actions en el fork. Se puede hacer haciendo click en el botón Actions:
+#### Opción B: API Modular (src/api.py)
 
-![action-button](assets/action-button.PNG)
+```bash
+python -c "
+from src.api import run_server
+run_server()
+"
+```
 
-Y luego haciendo click en el botón verde:
+### 3. Probar la API
 
-![enable-actions](assets/enable-actions.PNG)
+#### Usando curl:
 
-### Navegando en el fork
+```bash
+curl -X POST "http://localhost:8000/predict" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "pickup_weekday": 1.0,
+       "pickup_hour": 14.0,
+       "work_hours": 1.0,
+       "pickup_minute": 30.0,
+       "passenger_count": 2.0,
+       "trip_distance": 5.2,
+       "trip_time": 1200.0,
+       "trip_speed": 15.6,
+       "PULocationID": 1.0,
+       "DOLocationID": 2.0,
+       "RatecodeID": 1.0
+     }' \
+     -G --data-urlencode "confidence=0.5"
+```
 
-Ahora revisemos lo que hay en el repositorio.
+#### Usando Python:
 
-Notemos que hay un directorio oculto en la raíz del repositorio que se llama `.github`. Dentro hay otro directorio llamado `workflows`, aquí se ponen todos los archivos necesarios para configurar las Actions. Estos archivos deben estar en formato `YAML`. En este caso debemos encontrarnos con uno llamado `producto-datos-lab.yml` que será responsable de configurar la acción que deseamos corra el test unitario. El contenido de este archivo es el siguiente:
+```bash
+python -c "
+from src.client import TaxiTipClient
+client = TaxiTipClient('http://localhost:8000')
+result = client.predict_tip({
+    'pickup_weekday': 1.0,
+    'pickup_hour': 14.0,
+    'work_hours': 1.0,
+    'pickup_minute': 30.0,
+    'passenger_count': 2.0,
+    'trip_distance': 5.2,
+    'trip_time': 1200.0,
+    'trip_speed': 15.6,
+    'PULocationID': 1.0,
+    'DOLocationID': 2.0,
+    'RatecodeID': 1.0
+}, confidence=0.5)
+print(f'Predicción: {result}')
+"
+```
 
-```yml
-# Run unit tests for your Python application
+## 📊 Uso de la API
 
+### Endpoints Disponibles
+
+#### 1. Información del Modelo
+```bash
+GET http://localhost:8000/model_info
+```
+
+#### 2. Predicción Individual
+```bash
+POST http://localhost:8000/predict
+Content-Type: application/json
+
+{
+  "pickup_weekday": 1.0,
+  "pickup_hour": 14.0,
+  "work_hours": 1.0,
+  "pickup_minute": 30.0,
+  "passenger_count": 2.0,
+  "trip_distance": 5.2,
+  "trip_time": 1200.0,
+  "trip_speed": 15.6,
+  "PULocationID": 1.0,
+  "DOLocationID": 2.0,
+  "RatecodeID": 1.0
+}
+```
+
+#### 3. Predicción en Lote
+```bash
+POST http://localhost:8000/predict_batch
+Content-Type: application/json
+
+{
+  "features": [
+    [1.0, 14.0, 1.0, 30.0, 2.0, 5.2, 1200.0, 15.6, 1.0, 2.0, 1.0],
+    [2.0, 9.0, 1.0, 15.0, 1.0, 3.1, 900.0, 12.4, 3.0, 4.0, 1.0]
+  ],
+  "confidence": 0.5
+}
+```
+
+#### 4. Estado de Salud
+```bash
+GET http://localhost:8000/health
+```
+
+### Documentación Interactiva
+
+Una vez que la API esté ejecutándose, visita:
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
+
+## 🧠 Entrenamiento de Modelos
+
+### Características del Modelo
+
+El modelo utiliza las siguientes características:
+
+**Numéricas:**
+- `pickup_weekday`: Día de la semana (0-6)
+- `pickup_hour`: Hora del día (0-23)
+- `work_hours`: Si es hora laboral (0/1)
+- `pickup_minute`: Minuto del día (0-59)
+- `passenger_count`: Número de pasajeros
+- `trip_distance`: Distancia del viaje (millas)
+- `trip_time`: Tiempo del viaje (segundos)
+- `trip_speed`: Velocidad promedio (mph)
+
+**Categóricas:**
+- `PULocationID`: ID de ubicación de recogida
+- `DOLocationID`: ID de ubicación de destino
+- `RatecodeID`: Código de tarifa
+
+### Configuración del Modelo
+
+```python
+MODEL_CONFIG = {
+    'n_estimators': 100,    # Número de árboles
+    'max_depth': 10,        # Profundidad máxima
+    'random_state': 42      # Semilla para reproducibilidad
+}
+```
+
+## 🧪 Testing y CI/CD
+
+### Ejecutar Tests Localmente
+
+```bash
+cd app
+pytest test_rfc.py -v
+```
+
+### Pipeline CI/CD con GitHub Actions
+
+El proyecto incluye un pipeline automatizado que:
+
+1. **Se activa** cuando se hace push a archivos en `app/`
+2. **Instala** dependencias
+3. **Ejecuta** tests unitarios
+4. **Reporta** resultados
+
+Para activar el pipeline:
+
+1. **Fork** el repositorio
+2. **Habilita** GitHub Actions en tu fork
+3. **Haz cambios** en archivos de `app/`
+4. **Push** los cambios
+
+### Estructura del Pipeline
+
+```yaml
 name: PD-MDS-Lab
-
-# Controls when the action will run. 
 on:
-  # Triggers the workflow on push request events only when there are changes in the desired path
   push:
     paths:
       - 'app/**'
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "test"
   test:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        # Use bash as the shell
-        shell: bash
-
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      -
-        name: Checkout
+      - name: Checkout
         uses: actions/checkout@v2
-      - 
-        name: Set up Python
+      - name: Set up Python
         uses: actions/setup-python@v2
         with:
           python-version: '3.8.2'
-      - 
-        name: Install dependencies
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-      -
-        name: Test with pytest
+      - name: Test with pytest
         run: |
           cd app/
           pytest
 ```
 
-Veamos cada parte de este archivo:
+## 📓 Notebooks de Desarrollo
 
-```yml
-name: PD-MDS-Lab
-on:
-  push:
-    paths:
-      - 'app/**'
+### Notebooks Disponibles
+
+1. **`00_nyc-taxi-model.ipynb`**: Entrenamiento completo del modelo
+2. **`01_server.ipynb`**: Configuración y ejecución del servidor
+3. **`02_client.ipynb`**: Cliente para consumir la API
+4. **`03_nyc-taxi-model_future_predictions.ipynb`**: Predicciones futuras
+
+### Ejecutar Jupyter Lab
+
+```bash
+jupyter lab
 ```
 
-Acá se define un nombre para la Action para poder diferenciarla de otras. Además se específica que la disparará, en este caso será por cualquier **push** que cambie algún archivo dentro del directorio `app/`.
+## 🔍 Monitoreo
 
-```yml
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
+El proyecto incluye un sistema de monitoreo que:
+
+- **Rastrea** métricas de rendimiento
+- **Detecta** drift en los datos
+- **Alerta** sobre degradación del modelo
+- **Genera** reportes automáticos
+
+### Ejecutar Monitoreo
+
+```bash
+python -c "
+from src.monitoring import TaxiTipMonitor
+monitor = TaxiTipMonitor()
+monitor.run_monitoring()
+"
 ```
 
-En la siguiente parte se define que trabajos o tareas (`jobs`) deben ejecutarse cuando se dispare esta Action. En este caso es solo un `job`, que se llama `test` y que se ejecutará en un ambiente con el último release de Ubuntu. Además se puede definir algún comportamiento por defecto para este `job`, como el shell (intérprete de comandos) deseado, en este caso `bash`.
+## 🛠️ Solución de Problemas
 
-```yml
-    steps:
-      -
-        name: Checkout
-        uses: actions/checkout@v2
-      - 
-        name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.8.2'
-      - 
-        name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      -
-        name: Test with pytest
-        run: |
-          cd app/
-          pytest
+### Error: "Modelo no encontrado"
+```bash
+# Asegúrate de que el modelo esté entrenado
+python -c "from src.train import pipeline_entrenamiento_completo; from src.dataset import cargar_datos_nyc; df = cargar_datos_nyc('2020-01'); pipeline_entrenamiento_completo(df)"
 ```
 
-Finalmente hay que definir pasos o etapas (`steps`) para que está Action se complete. Son secuencias de comandos que logren alcanzar la funcionalidad deseada. `steps` tiene varios parámetros asociados como:
-
-- `name`: el nombre del paso.
-
-- `uses`: se puede especificar una `Action` que ya exista como un paso. 
-
-- `run`: en vez de utilizar una Action que ya exista también puede que se desee correr un comando. Dado que acá usamos `bash` dentro de una máquina virtual Linux, estos comandos deben tener la sintaxis adecuada.
-
-- `with`: se usa si es que se necesita especificar parámetros adicionales.
-
-
-Para entender cada paso:
-
-- El primer paso usa la Action `actions/checkout@v2`. Esto suualmente se incluye en todas las Action ya que permite a GitHub tener aceso o hacer check-put del repo.
-
-- Ahora que se hizo un check-out del repo, se debe configurar un ambiente capaz de correr código en Python. Para cumplir esto usamos la Action  `actions/setup-python@v2` especificando la versión de Python que necesitamos.
-
-- Teniendo ya el ambiente Python necesitamos instalar las depencias. Podemos hacerlo haciendo upgrade a `pip` y usarlo para instalar las depencias listadas en el archivo `requirements.txt`.
-
-- Finalmente podemos correr la prueba unitaria usando el comando `pytest`. Notemos que primero debemos hacer un `cd` para entrar al directorio `app`.
-
-Ahora que entendemos de mejor forma lo que hace un GH Action, podemos ponerlas a prueba.
-
-
-### Probando el pipeline CI/CD
-
-Dentro del directorio `app` hay una copia del programa servidor que entrega predicciones sobre los viajes en taxi. El código se encarga de cargar el clasificador en el estado global incluso antes de comenzar el server. Esto es porque queremos hacer test unitarios antes de comenzar siquiera el servicio.
-
-#### Test unitario con pytest
-
-Para realizar el test unitario usaremos la biblioteca `pytest`. Para usarla debemos poner nuestros test en scripts de Python donde el nombre de archivo empiece por el prefijo `test_`, en este caso se llama `test_rfc.py` ya que probaremos el desempeño del clasificador Random Forest. 
-
-Miremos el contenido de este archivo:
-
-```python
-import pandas as pd
-from main import rfc
-from sklearn.metrics import f1_score
-
-def test_accuracy():
-
-    # Load test data
-    taxi_test = pd.read_csv('./data/yellow_tripdata_2020-03_test.csv')
-
-    numeric_feat = [
-    "pickup_weekday",
-    "pickup_hour",
-    'work_hours',
-    "pickup_minute",
-    "passenger_count",
-    'trip_distance',
-    'trip_time',
-    'trip_speed'
-    ]
-    categorical_feat = [
-        "PULocationID",
-        "DOLocationID",
-        "RatecodeID",
-    ]
-
-    features = numeric_feat + categorical_feat
-    target_col = "high_tip"
-
-    # Predict test examples
-    preds_test = rfc.predict_proba(taxi_test[features])
-    preds_test_labels = [p[1] for p in preds_test.round()]
-
-    # Compute f1-score of classifier
-    f1 = f1_score(taxi_test[target_col], preds_test_labels)
-
-
-    # f1-score should be over 0.7
-    assert f1 > 0.7
+### Error: "Puerto 8000 ocupado"
+```bash
+# Usa un puerto diferente
+uvicorn main:app --reload --port 8001
 ```
 
-Hay solo una prueba unitaria definida en el método `test_accuracy`. Esta función carga los datos de test guardados en el archivo `data/yellow_tripdata_2020-03_test.csv` correspondiente a la muestra de viajes de marzo de 2020. Luego se usan estos datos para calcular el f1-score sobre los datos de prueba. 
-
-Si el f1-score es mayor a 0.7 la prueba se pasa exitosamente. De otra forma, falla.
-
-### Corriendo la GitHub Action
-
-Para correr el test unitario usando el pipeline CI/CD necesitamos hacer cambios en el repositorio remoto, específicamente en el directorio `app/`. Para hacer esto, **agreguemos un comentario dentro del archivo `main.py` y guardemos los cambios**.
-
-Ahora debemos usar git para hacer pull de los cambios hace la versión remota de nuestro fork.
-
-- Primero se verifica si hubo cambios usando el comando `git status`. Deberíamos ver el archivo `main.py` en la lista.
-
-- Ahora hay que hacer stage de todos los cambios usando `git add --all`.
-- Crear un commit con el comando `git commit -m "Testing the CI/CD pipeline"`. 
-- Finalmente hacer push de los cambios usando `git push origin main`.
-
-Con este push el pipeline CI/CD debe haber sido disparado. Para verlo en acción debemos visitar el repo fork usando un navegador y hacer click en el botón  `Actions`.
-
-
-Ahora podemos ver todo lo que ocurre mientras corre el flujo de trabajo que configuramos. Si luego de unos segundos volvemos a hacer click en el botón `Actions` podemos ver la lista de run acompañado con un íncono verde que muestra que todos los test fueron superados.
-
-
-¡Acabamos de ejecutar nuetro primer flujo de trabajo de CI/CD!
-
-### Corriendo el pipeline otra vez
-
-#### Cambiando el código
-
-Supongamos que el equipo de Data Science solicita estar siempre monitoreando el desempeño del clasificador usando datos de los días recientes. Simulemos ese comportamiento cambiando el archivo de los datos de test en el directorio `data/` modificando el script `test_rfc.py`. Hagamos el siguiente cambio para probar con datos de mayo de 2020:
-
-```python
-# Load test data
-    taxi_test = pd.read_csv('./data/yellow_tripdata_2020-03_test.csv')
+### Error: "Dependencias no encontradas"
+```bash
+# Reinstala las dependencias
+pip install -r requirements.txt --force-reinstall
 ```
 
-Y lo modificamos a esto:
+## 📈 Métricas de Rendimiento
 
-```python
-# Load test data
-    taxi_test = pd.read_csv('./data/yellow_tripdata_2020-05_test.csv')
-```
+El modelo típicamente alcanza:
+- **F1-Score**: > 0.7
+- **Accuracy**: > 0.75
+- **Precision**: > 0.8
+- **Recall**: > 0.6
 
-Una vez que guardamos los cambios, usamos git para hacer push con los mismos comandos de antes:
+## 🤝 Contribución
 
-- `git add --all`
-- `git commit -m "Adding new test data"`
-- `git push origin main`
+1. **Fork** el repositorio
+2. **Crea** una rama para tu feature
+3. **Haz** tus cambios
+4. **Ejecuta** los tests
+5. **Push** tus cambios
+6. **Crea** un Pull Request
 
-¿Qué es lo que ocurre? ¿Cómo podríamos solucionarlo?
+## 📄 Licencia
+
+Este proyecto está bajo la Licencia MIT. Ver `LICENSE` para más detalles.
+
+## 🙏 Agradecimientos
+
+- [DeepLearning.AI](https://www.deeplearning.ai/) por el curso de ML in Production
+- [Shreya Shankar](https://github.com/shreyashankar/debugging-ml-talk) por el código base
+- [GitHub Actions](https://github.com/features/actions) por la automatización de CI/CD
+
+---
+
+**¡Disfruta explorando el mundo del Machine Learning en Producción! 🚀**
 
