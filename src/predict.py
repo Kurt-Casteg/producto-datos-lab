@@ -289,6 +289,49 @@ def monitorear_rendimiento_temporal(
     return resultados
 
 
+def evaluar_meses_tabla(
+    modelo_path: str = MODEL_PATH,
+    meses: list = None,
+    n_muestras: int = 1000
+) -> pd.DataFrame:
+    """
+    Evalúa el modelo para varios meses y devuelve una tabla con los resultados.
+    
+    Args:
+        modelo_path: Ruta del modelo
+        meses: Lista de meses a evaluar (formato 'YYYY-MM')
+        n_muestras: Número de muestras a usar por mes
+    Returns:
+        DataFrame con columnas: mes, n_samples, f1_score
+    """
+    from .config import DATA_URLS
+    resultados = []
+    if meses is None:
+        meses = list(DATA_URLS.keys())
+    modelo = cargar_modelo(modelo_path)
+    for mes in meses:
+        try:
+            df = pd.read_parquet(DATA_URLS[mes])
+            df_proc = build_features(df.head(n_muestras))
+            X = df_proc[FEATURES]
+            y_true = df_proc[TARGET_COL]
+            y_pred = predecir(modelo, X)
+            f1 = f1_score(y_true, y_pred)
+            resultados.append({
+                'mes': mes,
+                'n_samples': len(df_proc),
+                'f1_score': f1
+            })
+        except Exception as e:
+            resultados.append({
+                'mes': mes,
+                'n_samples': 0,
+                'f1_score': None,
+                'error': str(e)
+            })
+    return pd.DataFrame(resultados)
+
+
 # Ejemplo de uso si ejecutas este script directamente
 if __name__ == "__main__":
     import pandas as pd
